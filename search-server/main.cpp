@@ -2,7 +2,7 @@
 #include <iostream>
 #include <set>
 #include <string>
-#include <utility>
+//#include <utility>
 #include <vector>
 #include <map>
 #include <cmath>
@@ -108,28 +108,49 @@ private:
         set<string> plus_words;
     };
 
+    struct FinalWord {
+        string word;
+        bool minus;
+        bool stop;
+    };
+
+    FinalWord ParseFinalWord(string word) const {
+        bool minus = false;
+        if (word[0] == '-') {
+            minus = true;
+            word = word.substr(1);
+        }
+        return { word, minus, IsStopWord(word) };
+    }
 
     Query ParseQuery(const string& text) const {
         Query query_words;
         for (const string& word : SplitIntoWordsNoStop(text)) {
-            if (word[0] == '-') {
-                string wordz = word.substr(1);
-                query_words.minus_words.insert(wordz);
-            }
-            else {
-                query_words.plus_words.insert(word);
+
+        const FinalWord final_word = ParseFinalWord(word);
+            if (!final_word.stop) {
+                if (final_word.minus) {
+                    query_words.minus_words.insert(final_word.word);
+                }
+                else {
+                    query_words.plus_words.insert(final_word.word);
+                }
             }
         }
         return query_words;
     }
 
 
+    double CalcIDF(const string& word) const {
+        return log(static_cast<double>(document_count_) / word_to_document_freqs_.at(word).size()); // исправлено приведение
+    }
+
     vector<Document> FindAllDocuments(const Query& query_words) const {
         vector<Document> matched_documents;
         map <int, double> document_to_relevance;
         for (const string& word : query_words.plus_words) {
             if (!word_to_document_freqs_.count(word)) continue;
-            double idf = log((double)document_count_ / word_to_document_freqs_.at(word).size()); 
+            double idf = CalcIDF(word); 
             for (const auto& [id, tf] : word_to_document_freqs_.at(word)) {
                 document_to_relevance[id] += idf * tf;
             }
