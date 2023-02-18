@@ -8,10 +8,12 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include<numeric>
 
 using namespace std;
 
 const int MAX_RESULT_DOCUMENT_COUNT = 5;
+const int ERROR_VALUE = 1e-6; // погрешность релевантности
 
 string ReadLine() {
     string s;
@@ -84,7 +86,7 @@ public:
 
         sort(matched_documents.begin(), matched_documents.end(),
             [](const Document& lhs, const Document& rhs) {
-                if (abs(lhs.relevance - rhs.relevance) < 1e-6) {
+                if (abs(lhs.relevance - rhs.relevance) < ERROR_VALUE) {
                     return lhs.rating > rhs.rating;
                 }
                 else {
@@ -103,20 +105,9 @@ public:
 
 
     vector<Document> FindTopDocuments(const string& raw_query, DocumentStatus status) const {
-        switch (status)
-        {
-        case DocumentStatus::ACTUAL:
-            return FindTopDocuments(raw_query, [](int document_id, DocumentStatus status, int rating) { return status == DocumentStatus::ACTUAL; });
-        case DocumentStatus::IRRELEVANT:
-            return FindTopDocuments(raw_query, [](int document_id, DocumentStatus status, int rating) { return status == DocumentStatus::IRRELEVANT; });
-        case DocumentStatus::BANNED:
-            return FindTopDocuments(raw_query, [](int document_id, DocumentStatus status, int rating) { return status == DocumentStatus::BANNED; });
-        case DocumentStatus::REMOVED:
-            return FindTopDocuments(raw_query, [](int document_id, DocumentStatus status, int rating) { return status == DocumentStatus::REMOVED; });
-        default:
-            break;
-        }
-        return {};
+        DocumentStatus doc_status = status;
+         return FindTopDocuments(raw_query, [doc_status](int document_id, DocumentStatus status, int rating) { 
+             return status == doc_status; });
     }
 
     int GetDocumentCount() const {
@@ -171,10 +162,8 @@ private:
     }
 
     static int ComputeAverageRating(const vector<int>& ratings) {
-        int rating_sum = 0;
-        for (const int rating : ratings) {
-            rating_sum += rating;
-        }
+        int rating_sum = accumulate(ratings.begin(), ratings.end(), 0);
+
         return rating_sum / static_cast<int>(ratings.size());
     }
 
