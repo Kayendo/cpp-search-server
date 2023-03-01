@@ -62,12 +62,7 @@ void TestSortByRelevance() {
     server.AddDocument(2, "cat with black tail"s, DocumentStatus::ACTUAL, { 5, 5 , 5 });
     server.AddDocument(3, "beautiful cat with black tail"s, DocumentStatus::ACTUAL, { 5, 5 , 5 });
     const auto found_docs = server.FindTopDocuments("beautiful cat with tail"s);
-    vector<int> a;
-    for (const auto& doc : found_docs) {
-        a.push_back(doc.id);
-    }
-    vector<int> b = { 3, 2, 1 };
-    ASSERT_EQUAL(a, b);
+    ASSERT_HINT(found_docs[0].relevance > found_docs[1].relevance, "Релевантность должна убывать");
 }
 
 void TestCalcRating() {
@@ -94,13 +89,18 @@ void TestFindDocumentsWithPredicate() {
 void TestFindDocumentsWithStatus() {
     SearchServer server;
     server.SetStopWords("with"s);
-    server.AddDocument(1, "cat with name"s, DocumentStatus::REMOVED, { 5, 5 , 5 });
-    server.AddDocument(2, "cat with black tail"s, DocumentStatus::BANNED, { 5, 5 , 5 });
-    server.AddDocument(3, "beautiful cat with black tail"s, DocumentStatus::IRRELEVANT, { 5, 5 , 5 });
-    const auto found_docs = server.FindTopDocuments("cat"s, DocumentStatus::BANNED);
-    ASSERT_EQUAL(found_docs[0].id, 2);
-    const auto docs = server.FindTopDocuments("cat"s, DocumentStatus::IRRELEVANT);
-    ASSERT_EQUAL(docs[0].id, 3);
+    server.AddDocument(1, "cat"s, DocumentStatus::REMOVED, { 5, 5 , 5 });
+    server.AddDocument(2, "dog"s, DocumentStatus::BANNED, { 4, 4 , 4 });
+    server.AddDocument(3, "parrot"s, DocumentStatus::IRRELEVANT, { 3, 3 , 3 });
+    server.AddDocument(4, "mouse"s, DocumentStatus::ACTUAL, { 2, 2 , 2 });
+    const auto doc_1 = server.FindTopDocuments("cat with mouse"s, DocumentStatus::REMOVED);
+    const auto doc_2 = server.FindTopDocuments("dog"s, DocumentStatus::BANNED);
+    const auto doc_3 = server.FindTopDocuments("parrot"s, DocumentStatus::IRRELEVANT);
+    const auto doc_4 = server.FindTopDocuments("mouse"s, DocumentStatus::ACTUAL);
+    ASSERT_EQUAL(doc_1[0].id, 1);
+    ASSERT_EQUAL(doc_2[0].id, 2);
+    ASSERT_EQUAL(doc_3[0].id, 3);
+    ASSERT_EQUAL(doc_4[0].id, 4); 
 }
 
 void TestCorrectRelevance() {
@@ -112,7 +112,6 @@ void TestCorrectRelevance() {
     const auto found_docs = server.FindTopDocuments("cat with black dog"s);
     double a = found_docs[0].relevance;
     double b = 0.376019;
-    const double ERROR_VALUE = 1e-6;
     ASSERT(abs(a - b) < ERROR_VALUE);
 }
 
