@@ -72,30 +72,26 @@ enum class DocumentStatus {
 
 class SearchServer {
 public:
-    inline static constexpr int INVALID_DOCUMENT_ID = -1;
+    //inline static constexpr int INVALID_DOCUMENT_ID = -1;
 
     SearchServer() = default;
-   explicit SearchServer(const string& collection) {
-        for (const string& word : SplitIntoWords(collection)) {
-            if (IsValidWord(word)) {
-            stop_words_.insert(word);
-            } 
-            else {
-                throw invalid_argument("invalid argument");
-            }
-        }
+    
+    explicit SearchServer(const string& text) : SearchServer(SplitIntoWords(text)) {
+
     }
-    template <typename Collection>
-   explicit SearchServer(const Collection& collection) {
-        for (const string& word : collection) {
-            if (IsValidWord(word)) {
-            stop_words_.insert(word);
+    
+    template <typename Collection> 
+   explicit SearchServer(const Collection& collection) { 
+        for (const string& word : collection) { 
+            if (IsValidWord(word)) { 
+                stop_words_.insert(word); 
+            }  
+            else { 
+                throw invalid_argument("Unacceptable character in the word "s + word); 
             } 
-            else {
-                throw invalid_argument("invalid argument");
-            }
-        }
-    }
+        } 
+    } 
+
 
     static bool IsValidWord(const string& word) {
         return none_of(word.begin(), word.end(), [](char c) {
@@ -105,11 +101,14 @@ public:
 
     void AddDocument(int document_id, const string& document, DocumentStatus status,
         const vector<int>& ratings) {
-        if (document_id < 0 || documents_.count(document_id) != 0) {
-            throw invalid_argument("invalid argument");
+        if (document_id < 0) {
+            throw invalid_argument("Document ID is negative"s);
+        }
+        if (documents_.count(document_id) != 0) {
+            throw invalid_argument("Document ID already exists"s);
         }
         if (!IsValidWord(document)) { 
-            throw invalid_argument("invalid argument");
+            throw invalid_argument("Unacceptable character in the document"s);
         }
         id_of_all.push_back(document_id);
         const vector<string> words = SplitIntoWordsNoStop(document);
@@ -221,6 +220,9 @@ private:
 
     QueryWord ParseQueryWord(string text) const {
         bool is_minus = false;
+        if (text[1] == '-') {
+            throw invalid_argument("Double minus");
+        }
         if (text[0] == '-') {
             is_minus = true;
             text = text.substr(1);
@@ -236,12 +238,15 @@ private:
     Query ParseQuery(const string& text) const {
         Query result;
         if (!IsValidWord(text)) {
-            throw invalid_argument("invalid argument");
+            throw invalid_argument("Unacceptable character in the text"s);
         }
         for (const string& word : SplitIntoWords(text)) {
             const QueryWord query_word = ParseQueryWord(word);
-            if (query_word.data[0] == '-' || query_word.data.empty()) {
-                throw invalid_argument("invalid argument");
+            if (query_word.data[0] == '-') {
+                throw invalid_argument("Undelivered minus"s);
+            }
+            if (query_word.data.empty()) {
+                throw invalid_argument("Query word is empty");
             }
             if (!query_word.is_stop) {
                 if (query_word.is_minus) {
