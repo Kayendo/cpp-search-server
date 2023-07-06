@@ -13,6 +13,7 @@ void PrintDocument(const Document& document) {
          << "relevance = "s << document.relevance << ", "s
          << "rating = "s << document.rating << " }"s << endl;
 }
+
 void PrintMatchDocumentResult(int document_id, const vector<string>& words, DocumentStatus status) {
     cout << "{ "s
          << "document_id = "s << document_id << ", "s
