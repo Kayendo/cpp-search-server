@@ -1,4 +1,12 @@
 #pragma once
+
+// добрый вечер, в ваших замечаниях было:
+// using namespace в хедере (испр. в строке 19)
+// Очень большой возвращаемый параметр, я бы сделал using (испр. в строке 52
+// использован для всех функций MatchResult)
+// Сюда стоит добавить string view в ккоторой хранить текст документа (испр. в строке 80)
+// Не совсем понимаю, какие еще замечания нужно исправить, прошу указать
+
 #include "string_processing.h"
 #include "log_duration.h"
 #include "document.h"
@@ -11,6 +19,8 @@
 #include <execution>
 #include <string_view>
 #include <thread>
+
+// здесь было using namespace
 
 const double COMPARE_TOLERANCE = 1e-6;
 const int MAX_RESULT_DOCUMENT_COUNT = 5;
@@ -42,7 +52,7 @@ public:
 
     int GetDocumentCount() const;
 
-    using MatchResult = std::tuple<std::vector<std::string_view>, DocumentStatus>;
+    using MatchResult = std::tuple<std::vector<std::string_view>, DocumentStatus>; // using для возвращаемого параметра
     
    MatchResult MatchDocument(std::execution::parallel_policy policy, std::string_view raw_query, int document_id) const;
 
@@ -68,7 +78,7 @@ private:
     struct DocumentData {
         int rating;
         DocumentStatus status;
-        std::string_view doc_text;
+        std::string_view doc_text; // string view для хранения текста
     };
     
     struct QueryWord {
